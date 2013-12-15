@@ -33,13 +33,16 @@ if (args.args) {
 
 var screen; // cache of last screen to speed up initial paint when new clients connect
 function run() {
-    var sub = child.exec(command); // exec rather than spawn to handle shell syntax within command
-    sub.stdout.on('data', function (data) {
-            screen = data.toString();
+    // exec rather than spawn to handle shell syntax within command
+    child.exec(command, function (error, stdout, stderr) {
+            screen = stdout.toString();
             io.sockets.emit('screen', screen);
-        });
-    sub.stderr.on('data', function (data) {
-            console.error("error:", data.toString());
+            if (stderr) {
+                console.error("error: " + stderr);
+            }
+            if (error !== null) {
+                console.error("exec error: " + error);
+            }
         });
 }
 
