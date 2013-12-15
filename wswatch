@@ -1,0 +1,52 @@
+#!/usr/bin/env node
+
+// server for wswatch, serves the output of another program via WebSockets etc.
+
+"use strict";
+
+var argparse = require('argparse');
+var connect = require('connect');
+var socket = require('socket.io');
+var child = require('child_process');
+
+var parser = new argparse.ArgumentParser({
+        version: '0.1.0',
+        description: "Unix watch(1) in the browser"
+    });
+parser.addArgument([ '-p', '--port' ], { type: parseInt, required: true, help: "HTTP port to serve the view" });
+parser.addArgument([ '-n', '--interval' ], { defaultValue: 2, help: "Update interval in seconds (default: 2)" });
+parser.addArgument([ 'command' ], { help: "Program to run" });
+parser.addArgument([ 'args' ], { nargs: '...', help: "Arguments for program to run" });
+var args = parser.parseArgs();
+
+var app = connect();
+app.use(connect.static('public'));
+var server = app.listen(args.port);
+var io = socket.listen(server);
+
+io.set('log level', 1); // reduce logging
+
+var command = args.command;
+if (args.args) {
+    command += ' ' + args.args.join(' ');
+}
+
+var screen; // cache of last screen to speed up initial paint when new clients connect
+function run() {
+    var sub = child.exec(command); // exec rather than spawn to handle shell syntax within command
+    sub.stdout.on('data', function (data) {
+            screen = data.toString();
+            io.sockets.emit('screen', screen);
+        });
+    sub.stderr.on('data', function (data) {
+            console.error("error:", data.toString());
+        });
+}
+
+run(); // initial run to populate cache
+setInterval(run, args.interval * 1000);
+
+io.sockets.on('connection', function (socket) {
+        socket.emit('title', command);
+        socket.emit('screen', screen); // initial paint from cache
+    });

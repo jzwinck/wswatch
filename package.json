@@ -1,0 +1,23 @@
+{
+  "name": "wswatch",
+  "version": "0.1.0",
+  "author": "John Zwinck",
+  "description": "Unix watch(1) in the browser",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jzwinck/wswatch.git"
+  },
+  "keywords": [
+    "cli",
+    "http",
+    "server",
+    "watch",
+    "websockets"
+  ],
+  "dependencies" : {
+    "argparse" :  "*",
+    "connect"   :  "*",
+    "socket.io" :  "*"
+  },
+  "license": "MIT"
+}
